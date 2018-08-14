@@ -15,10 +15,13 @@ function addLevelDBData(key,value){
 
 // Get data from levelDB with key
 function getLevelDBData(key){
-  db.get(key, function(err, value) {
-    if (err) return console.log('Not found!', err);
-    console.log('Value = ' + value);
-  })
+    return new Promise(function(resolve, reject) {
+        db.get(key).then(function(value){
+            console.log('Value = ' + value);
+          }).catch(function(err) {
+            console.log('Not found!', err);
+          })
+    });
 }
 
 // Add data to levelDB with value
@@ -32,6 +35,34 @@ function addDataToLevelDB(value) {
           console.log('Block #' + i);
           addLevelDBData(i, value);
         });
+}
+
+function getNumberOfElementsInDB() {
+    let i = 0;
+    return new Promise(function(resolve, reject) {
+        db.createReadStream().on('data', function (data) {
+            i++;
+            console.log(data);
+        }).on('error', function(err) {
+            console.log('Unable to read data stream!', err);
+            reject(err);
+        }).on('close', function() {
+            resolve(i);
+        })
+    });
+}
+
+function getLastBlock() {
+    getNumberOfElementsInDB().then(function(result){
+        console.log('Last element index: ' + result);
+        this.height = result;
+        return db.get(result - 1);
+    }).then(function(result) {
+        console.log('Result: ' + JSON.stringify(result));
+        return this.lastBlock = result;
+    }).catch(function(error){
+        console.log(error);
+    })
 }
 
 /* ===== Testing ==============================================================|
@@ -48,7 +79,7 @@ function addDataToLevelDB(value) {
 
 (function theLoop (i) {
   setTimeout(function () {
-    addDataToLevelDB('Testing data');
+    addDataToLevelDB('Testing data' + i);
     if (--i) theLoop(i);
   }, 100);
 })(10);
