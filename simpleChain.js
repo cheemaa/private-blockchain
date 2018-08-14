@@ -88,13 +88,14 @@ class Blockchain{
 
     // get block
     getBlock(blockHeight){
-        // return object as a single string
-        db.get(blockHeight).then(function(block){
-            console.log(JSON.parse(JSON.stringify(block)));
-            return JSON.parse(JSON.stringify(block));
-        }).catch(function(err) {
-            console.log('Not found!', err);
-            return err;
+        return new Promise(function(resolve, reject) {
+            db.get(blockHeight).then(function(block){
+                console.log(JSON.parse(JSON.stringify(block)));
+                resolve(block);
+            }).catch(function(err) {
+                console.log('Not found!', err);
+                reject(err);
+            });
         });
     }
 
@@ -125,92 +126,43 @@ class Blockchain{
         });
     }
 
-    getChainBlocks() {
-        return new Promise(function(resolve, reject) {
-            var blocks = [];
-            db.createReadStream().on('data', function (data) {
-                blocks.push(data.key);
-            }).on('error', function(err) {
-                console.log('Unable to read data stream!', err);
-                reject(err);
-            }).on('close', function() {
-                resolve(blocks);
-            });
-        });
-    }
-
     // Validate blockchain
-    validateChain2(){
+    validateChain(){
         let errorLog = [];
         var keys = [];
         var values = [];
 
-        this.getChainBlocks().then(function(blocks) {
-            console.log('Blocks length: ' + blocks.length);
-            return Promise.all(blocks.map(this.validateBlock));
-        }).then(function(blockValidations){
-            for (var i = 0; i < this.blockValidations.length-1; i++) {
-                errorLog.push(i);
-                console.log('Error in block #' + i);
-            }
-        }).catch(function(error) {
-            console.log('Error validating chain: ' + error);
-        });
-
-        /*db.createReadStream().on('data', function (data) {
+        db.createReadStream().on('data', function (data) {
             keys.push(data.key);
+            values.push(data.value);
         }).on('error', function(err) {
             console.log('Unable to read data stream!', err);
         }).on('close', function() {
-            keys.forEach(function(key) {
-                this.validateBlock(key).then(function(isValid){
-                    if(!isValid) errorLog.push(key);
-                    console.log(key + 'is valid: ' + isValid);
-                });
-            });
             Promise.all(keys.map(this.validateBlock)).then(function(blockValidations){
-                for (var i = 0; i < this.blockValidations.length-1; i++) {
+                for (var i = 0; i < blockValidations.length-1; i++) {
                     errorLog.push(i);
                     console.log('Error in block #' + i);
                 }
-            }).then(function() {
-                // compare blocks hash link
-                let blockHash = block.hash;
-    
-                this.getBlock(blockHeight+1).then(function(nextBlock) {
-                    let previousHash = this.chain[i+1].previousBlockHash;
+                return Promise.all(keys.map(this.getBlock(key+1)));
+            }).then(function(nextBlocks) {
+                for (var i = 0; i < nextBlocks.length-1; i++) {
+                    let blockHash = values[i].hash;
+                    let previousHash = nextBlocks[i].previousBlockHash;
                     if (blockHash!==previousHash) {
                         errorLog.push(blockHeight);
                     }
-                }).catch(function(error) {
-                    
-                });
+                }
+                if (errorLog.length>0) {
+                    console.log('Block errors = ' + errorLog.length);
+                    console.log('Blocks: ' + errorLog);
+                } else {
+                    console.log('No errors detected');
+                }
             }).catch(function(error) {
-    
+                console.log('Error validating chain: ' + error);
             });
-        });*/
+        });
 
         
-    }
-
-    // Validate blockchain
-    validateChain(){
-        let errorLog = [];
-        for (var i = 0; i < this.chain.length-1; i++) {
-            // validate block
-            if (!this.validateBlock(i))errorLog.push(i);
-            // compare blocks hash link
-            let blockHash = this.chain[i].hash;
-            let previousHash = this.chain[i+1].previousBlockHash;
-            if (blockHash!==previousHash) {
-                errorLog.push(i);
-            }
-        }
-        if (errorLog.length>0) {
-            console.log('Block errors = ' + errorLog.length);
-            console.log('Blocks: '+errorLog);
-        } else {
-            console.log('No errors detected');
-        }
     }
 }
