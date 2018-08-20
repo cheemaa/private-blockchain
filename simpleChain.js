@@ -37,9 +37,6 @@ class Blockchain{
             genesisBlock.hash = SHA256(JSON.stringify(genesisBlock)).toString();
             return db.put(0, JSON.stringify(genesisBlock));
         }
-        else {
-            console.log('Blockchain number of blocks: ' + height);
-        }
     }).then(function(result){
         console.log('*** Blockchain instantiated ***');
     }).catch(function(error) {
@@ -88,15 +85,7 @@ class Blockchain{
 
     // get block
     getBlock(blockHeight){
-        return new Promise(function(resolve, reject) {
-            db.get(blockHeight).then(function(block){
-                console.log(JSON.parse(JSON.stringify(block)));
-                resolve(block);
-            }).catch(function(err) {
-                console.log('Not found!', err);
-                reject(err);
-            });
-        });
+        return db.get(blockHeight);
     }
 
     // validate block
@@ -113,7 +102,6 @@ class Blockchain{
                 let validBlockHash = SHA256(JSON.stringify(block)).toString();
                 // Compare
                 if (blockHash===validBlockHash) {
-                    console.log('Valid block!');
                     resolve(true);
                 } else {
                     console.log('Block #'+blockHeight+' invalid hash:\n'+blockHash+'<>'+validBlockHash);
@@ -132,24 +120,26 @@ class Blockchain{
         var keys = [];
         var values = [];
 
-        db.createReadStream().on('data', function (data) {
+        db.createReadStream().on('data', (data) => {
             keys.push(data.key);
             values.push(data.value);
-        }).on('error', function(err) {
+        }).on('error', (err) => {
             console.log('Unable to read data stream!', err);
-        }).on('close', function() {
-            Promise.all(keys.map(this.validateBlock)).then(function(blockValidations){
-                for (var i = 0; i < blockValidations.length-1; i++) {
-                    errorLog.push(i);
-                    console.log('Error in block #' + i);
+        }).on('close', () => {
+            Promise.all(keys.map(this.validateBlock)).then((validations) => {
+                for(var i=0; i < keys.length; i++) {
+                    if(!validations[i]) {
+                        errorLog.push(i);
+                    }
                 }
-                return Promise.all(keys.map(this.getBlock(key+1)));
-            }).then(function(nextBlocks) {
-                for (var i = 0; i < nextBlocks.length-1; i++) {
-                    let blockHash = values[i].hash;
-                    let previousHash = nextBlocks[i].previousBlockHash;
+                keys.splice(-1,1);
+                return Promise.all(keys.map(key => this.getBlock(parseInt(key)+1)));
+            }).then((nextBlocks) => {
+                for (var i = 0; i < nextBlocks.length; i++) {
+                    let blockHash = JSON.parse(values[i]).hash;
+                    let previousHash = JSON.parse(nextBlocks[i]).previousBlockHash;
                     if (blockHash!==previousHash) {
-                        errorLog.push(blockHeight);
+                        errorLog.push(i);
                     }
                 }
                 if (errorLog.length>0) {
@@ -158,11 +148,48 @@ class Blockchain{
                 } else {
                     console.log('No errors detected');
                 }
-            }).catch(function(error) {
-                console.log('Error validating chain: ' + error);
+            }).catch((error) => {
+                console.log(error);
             });
-        });
-
-        
+        });        
     }
 }
+
+
+let b = new Blockchain();
+b.getBlockHeight().then(function(height) {
+    console.log('Block height: ' + height);
+    return b.getBlock(height + 1);
+}).catch(function(error) {
+    console.log('Index not found in database.');
+    return b.getBlock(0);
+}).then(function(block) {
+    console.log('Block #0: ' + block);
+    return b.validateBlock(0);
+}).then(function(isValid) {
+    console.log('Block 0 is valid: ' + isValid);
+    return b.getBlock(1);
+}).then(function(block) {
+    console.log('Block #1: ' + block);
+    //Block 1 is invalid
+    return b.validateBlock(1);
+}).then(function(isValid) {
+    console.log('Block 1 is valid: ' + isValid);
+    return b.getBlock(2);
+}).then(function(block) {
+    console.log('Block #2: ' + block);
+    return b.validateBlock(2);
+}).then(function(isValid) {
+    console.log('Block 2 is valid: ' + isValid);
+    return b.getBlock(3);
+}).then(function(block) {
+    console.log('Block #3: ' + block);
+    return b.validateBlock(3);
+}).then(function(isValid) {
+    console.log('Block 3 is valid: ' + isValid);
+    return b.validateChain();
+}).then(function(result) {
+    console.log('Valid Chain');
+}).catch(function(error) {
+    console.log('Error: ' + error)
+});
