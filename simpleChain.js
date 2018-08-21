@@ -30,7 +30,7 @@ class Blockchain{
   constructor(){
     //this.addBlock(new Block("First block in the chain - Genesis block"));
     this.getBlockHeight().then(function(height) {
-        if(height == 0) {
+        if(height == -1) {
             console.log('Empty blockchain - Create genesis block');
             let genesisBlock = new Block("First block in the chain - Genesis block");
             genesisBlock.time = new Date().getTime().toString().slice(0,-3);
@@ -48,10 +48,10 @@ class Blockchain{
   addBlock(newBlock) {
     this.getBlockHeight().then(function(height) {
         // Block height
-        newBlock.height = height;
+        newBlock.height = height + 1;
         // UTC timestamp
         newBlock.time = new Date().getTime().toString().slice(0,-3);
-        return db.get(height - 1);
+        return db.get(height);
     }).then(function(lastBlock) {
         lastBlock = JSON.parse(lastBlock);
         // Previous block hash
@@ -70,7 +70,7 @@ class Blockchain{
 
     // Get block height
     getBlockHeight(){
-        let blockHeight = 0;
+        let blockHeight = -1;
         return new Promise(function(resolve, reject) {
             db.createReadStream().on('data', function (data) {
                 blockHeight++;
