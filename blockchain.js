@@ -16,7 +16,7 @@ module.exports = class Blockchain{
   constructor(){
     //this.addBlock(new Block("First block in the chain - Genesis block"));
     this.getBlockHeight().then(function(height) {
-        if(height == -1) {
+        if(height == 0) {
             console.log('Empty blockchain - Create genesis block');
             let genesisBlock = new Block("First block in the chain - Genesis block");
             genesisBlock.time = new Date().getTime().toString().slice(0,-3);
@@ -56,7 +56,7 @@ module.exports = class Blockchain{
 
     // Get block height
     getBlockHeight(){
-        let blockHeight = -1;
+        let blockHeight = 0;
         return new Promise(function(resolve, reject) {
             db.createReadStream().on('data', function (data) {
                 blockHeight++;
@@ -64,6 +64,7 @@ module.exports = class Blockchain{
                 console.log('Unable to read data stream!', err);
                 reject(err);
             }).on('close', function() {
+                if(blockHeight > 0) blockHeight = blockHeight - 1;
                 resolve(blockHeight);
             })
         });
