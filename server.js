@@ -16,7 +16,25 @@ server.route({
     method:'GET',
     path:'/block/{height}',
     handler:function(request,h) {
-        return blockchain.getBlock(encodeURIComponent(request.params.height));
+        return blockchain.getBlockHeight().then( (height) => {
+            let requestedBlock = parseInt(encodeURIComponent(request.params.height));
+            console.log(requestedBlock);
+            
+            let data;
+            if(isNaN(requestedBlock)) {
+                data = { error: 'You must provide a number of a block'};
+                h.response(data).code(404); 
+            }
+            else if(requestedBlock != 0 && height <= requestedBlock) {
+                data = { error: 'Chain height is ' + height};
+                h.response(data).code(404);
+            }
+            
+            return blockchain.getBlock(encodeURIComponent(request.params.height)); 
+        } ).catch( (error) => {
+            console.log(error);
+            return h.response(data).code(404);
+        } );
     }
 });
 
