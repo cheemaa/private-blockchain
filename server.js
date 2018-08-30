@@ -29,10 +29,12 @@ server.route({
                 return h.response(data).header('Content-Type', 'application/json').code(404);
             }
             
-            return blockchain.getBlock(encodeURIComponent(request.params.height)); 
-        } ).catch( (error) => {
+            return blockchain.getBlock(encodeURIComponent(request.params.height));
+        } ).then((block) => {
+            return h.response(block).header('Content-Type', 'application/json').code(200);
+        }).catch( (error) => {
             console.log(error);
-            return h.response(error).code(500);
+            return h.response(error).header('Content-Type', 'application/json').code(413);
         } );
     }
 });
