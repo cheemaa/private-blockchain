@@ -22,11 +22,11 @@ server.route({
             let data;
             if(isNaN(requestedBlockHeight)) {
                 data = { error: 'You must provide a number of a block'};
-                return h.response(data).header('Content-Type', 'application/json').code(404); 
+                throw data; 
             }
-            else if(requestedBlockHeight != 0 && height <= requestedBlockHeight) {
+            else if(requestedBlockHeight != 0 && height < requestedBlockHeight) {
                 data = { error: 'Chain height is ' + height};
-                return h.response(data).header('Content-Type', 'application/json').code(404);
+                throw data;
             }
             
             return blockchain.getBlock(encodeURIComponent(request.params.height));
@@ -34,7 +34,7 @@ server.route({
             return h.response(block).header('Content-Type', 'application/json').code(200);
         }).catch( (error) => {
             console.log(error);
-            return h.response(error).header('Content-Type', 'application/json').code(413);
+            return h.response(error).header('Content-Type', 'application/json').code(404);
         } );
     }
 });
