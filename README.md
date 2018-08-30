@@ -14,7 +14,7 @@ In order to run the webservice in your local machine follow these steps:
 
 ## Testing
 
-This API contains 2 endpoints:
+This API has been created with Hapijs and contains 2 endpoints:
 
 1. GET /block/{blockHeight}
 2. POST /block
