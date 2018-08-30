@@ -32,7 +32,7 @@ module.exports = class Blockchain{
 
   // Add new block
   addBlock(newBlock) {
-    this.getBlockHeight().then(function(height) {
+    return this.getBlockHeight().then(function(height) {
         // Block height
         newBlock.height = height + 1;
         // UTC timestamp
@@ -46,9 +46,9 @@ module.exports = class Blockchain{
         newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
         console.log('New block to be added: ' + JSON.stringify(newBlock));
         // Adding block object to chain
-        return db.put(newBlock.height, JSON.stringify(newBlock));
-    }).then(function(result){
+        db.put(newBlock.height, JSON.stringify(newBlock));
         console.log('Block #' + newBlock.height + ' saved!');
+        return db.get(newBlock.height);
     }).catch(function(error) {
         console.log('Error saving block #' + newBlock.height + ': ' + error);
     });
