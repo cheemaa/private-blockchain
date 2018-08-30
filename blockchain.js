@@ -46,9 +46,7 @@ module.exports = class Blockchain{
         newBlock.hash = SHA256(JSON.stringify(newBlock)).toString();
         console.log('New block to be added: ' + JSON.stringify(newBlock));
         // Adding block object to chain
-        db.put(newBlock.height, JSON.stringify(newBlock));
-        console.log('Block #' + newBlock.height + ' saved!');
-        return db.get(newBlock.height);
+        return db.put(newBlock.height, JSON.stringify(newBlock));;
     }).catch(function(error) {
         console.log('Error saving block #' + newBlock.height + ': ' + error);
     });

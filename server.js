@@ -43,7 +43,11 @@ server.route({
     method:'POST',
     path:'/block',
     handler:function(request,h) {
-        return blockchain.addBlock(new Block(request.payload.data)).then((block) => {
+        return blockchain.addBlock(new Block(request.payload.body)).then((result) => {
+            return blockchain.getBlockHeight();
+        }).then((height) => {
+            return blockchain.getBlock(height);
+        }).then((block) => {
             return h.response(block).header('Content-Type', 'application/json').code(200);
         }).catch((error) => {
             console.log(error);
