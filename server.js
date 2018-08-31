@@ -43,7 +43,13 @@ server.route({
     method:'POST',
     path:'/block',
     handler:function(request,h) {
-        return blockchain.addBlock(new Block(request.payload.body)).then((result) => {
+        let body = request.payload.body;
+        if(body == undefined || body == '') {
+            let error = { error: "Body can't be empty"};
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        }
+
+        return blockchain.addBlock(new Block(body)).then((result) => {
             return blockchain.getBlockHeight();
         }).then((height) => {
             return blockchain.getBlock(height);
