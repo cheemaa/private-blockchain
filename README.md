@@ -6,13 +6,16 @@ Blockchain has the potential to change the way that the world approaches data. I
 
 Installing Node and NPM is pretty straightforward using the installer package available from the (Node.js® web site)[https://nodejs.org/en/].
 
-## Getting Started
+## Getting Node.js server running locally
 
-In order to run the webservice in your local machine follow these steps:
+Hapi framework is used.
+
+In order to get it running in your local machine follow these steps:
 1. npm install
 2. npm start
+3. The API is available at http://localhost:8000
 
-## Testing
+## Endpoints
 
 This API has been created with Hapijs and contains 2 endpoints:
 
