@@ -62,6 +62,31 @@ server.route({
     }
 });
 
+server.route({
+    method:'POST',
+    path:'/requestValidation',
+    handler:function(request,h) {
+        let address = request.payload.address;
+        let requestTimeStamp = Date.now();
+
+        let response = {
+            address: address,
+            requestTimeStamp: requestTimeStamp,
+            message: address + ':' + requestTimeStamp + ':starRegistry',
+            validationWindow: 300
+        };
+        return response;
+    }
+});
+
+server.route({
+    method:'POST',
+    path:'/message-signature/validate',
+    handler:function(request,h) {
+        
+    }
+});
+
 // Start the server
 async function start() {
     try {
