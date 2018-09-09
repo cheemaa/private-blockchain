@@ -4,6 +4,10 @@ const Hapi=require('hapi');
 const Blockchain = require('./blockchain');
 const Block = require('./block');
 const blockchain = new Blockchain();
+const StarRegistrationRequest = require('./starRegistrationRequest');
+const StarRegistrationRequests = require('./starRegistrationRequests');
+const requestsDB = new StarRegistrationRequests();
+const maxValidationWindow = 300;
 
 // Create a server with a host and port
 const server=Hapi.server({
@@ -67,15 +71,40 @@ server.route({
     path:'/requestValidation',
     handler:function(request,h) {
         let address = request.payload.address;
-        let requestTimeStamp = Date.now();
+        if(address == undefined || address == '') {
+            let error = { error: "You must provide your address"};
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        }
 
-        let response = {
-            address: address,
-            requestTimeStamp: requestTimeStamp,
-            message: address + ':' + requestTimeStamp + ':starRegistry',
-            validationWindow: 300
-        };
-        return response;
+        let validationWindow;
+        let timeStamp;
+        return requestsDB.getRequest(address).then((requestTimeStamp) => {
+            let diffRequest = (Date.now() - requestTimeStamp) / 1000;
+            validationWindow = maxValidationWindow - diffRequest;
+            if(validationWindow < 0) {
+                throw 'Expired';
+            }
+            else {
+                timeStamp = requestTimeStamp;
+            }
+        }).catch((error) => {
+            console.log(error);
+            let starRegistrationRequest = new StarRegistrationRequest(address);
+            validationWindow = maxValidationWindow;
+            timeStamp = starRegistrationRequest.requestTimeStamp;
+            return requestsDB.saveRequest(starRegistrationRequest);
+        }).then(() => {
+            let response = {
+                address: address,
+                requestTimeStamp: timeStamp,
+                message: address + ':' + timeStamp + ':starRegistry',
+                validationWindow: validationWindow
+            };
+            return h.response(response).header('Content-Type', 'application/json').code(200);
+        }).catch((error) => {
+            console.log(error);
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        });
     }
 });
 
@@ -83,7 +112,37 @@ server.route({
     method:'POST',
     path:'/message-signature/validate',
     handler:function(request,h) {
-        
+        let address = request.payload.address;
+        let signature = request.payload.signature;
+        if(address == undefined || address == '' || signature == undefined || signature == '') {
+            let error = { error: "You must provide your address and the signature to the message"};
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        }
+
+        return requestsDB.getRequest(address).then((requestTimeStamp) => {
+            let diffRequest = (Date.now() - requestTimeStamp) / 1000;
+            let validationWindow = maxValidationWindow - diffRequest;
+            if(validationWindow < 0) {
+                let error = { error: "Expired. Request a new message to sign."};
+                return h.response(error).header('Content-Type', 'application/json').code(400);
+            }
+
+            let response = {
+                registerStar: true,
+                status: {
+                  address: address,
+                  requestTimeStamp: requestTimeStamp,
+                  message: address + ":" + requestTimeStamp +":starRegistry",
+                  validationWindow: validationWindow,
+                  messageSignature: "valid"
+                }
+            };
+            return response;
+        }).catch((error) => {
+            console.log(error);
+            let errorMessage = { error: "Obtain first a message to sign by calling this endpoint: /requestValidation"};
+            return h.response(errorMessage).header('Content-Type', 'application/json').code(400);
+        });
     }
 });
 
