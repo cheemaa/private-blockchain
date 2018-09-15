@@ -12,11 +12,18 @@ module.exports = class StarRegistrationRequests{
   }
 
   getRequest(address) {
-    return db.get(address);
+    return new Promise(function(resolve, reject) {
+      db.get(address).then((request) => {
+        resolve(JSON.parse(request));
+      }).catch((error) => {
+        console.log(error);
+        reject(error);
+      });
+    });
   }
 
   // Add new block
   saveRequest(newRequest) {
-    return db.put(newRequest.address, newRequest.requestTimeStamp);
+    return db.put(newRequest.address, JSON.stringify(newRequest));
   }
 }
