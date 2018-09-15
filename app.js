@@ -36,6 +36,8 @@ server.route({
             
             return blockchain.getBlock(encodeURIComponent(request.params.height));
         } ).then((block) => {
+            block = JSON.parse(block);
+            block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
             return h.response(block).header('Content-Type', 'application/json').code(200);
         }).catch( (error) => {
             console.log(error);
