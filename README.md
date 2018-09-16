@@ -1,6 +1,6 @@
 # Blockchain Data
 
-Blockchain has the potential to change the way that the world approaches data. In this project a webservice is created to expose basic methods of a private blockchain.
+Notary service to register stars implemented using blockchain.
 
 ### Prerequisites
 
@@ -17,9 +17,60 @@ In order to get it running in your local machine follow these steps:
 
 ## Endpoints
 
-This API has been created with Hapijs and contains 2 endpoints:
+This API has been created with Hapijs and contains the following endpoints:
 
-1. GET /block/{blockHeight}
-2. POST /block
+### Validate identity
+In order to register a star you must first validate your identity. Follow this steps to do so:
+1. Request a message to be signed:
+```
+curl -X "POST" "http://localhost:8000/requestValidation" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ"
+}'
+```
+2. Sign the message using your private key
+3. Provide the signed message in order to be able to register a star
+```
+curl -X "POST" "http://localhost:8000/message-signature/validate" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ",
+  "signature": "H6ZrGrF0Y4rMGBMRT2+hHWGbThTIyhBS0dNKQRov9Yg6GgXcHxtO9GJN4nwD2yNXpnXHTWU9i+qdw5vpsooryLU="
+}'
+```
 
-Run a REST client in order to perform calls to the 2 exposed methods.
+### Register a star
+Once your identity has been validated you can register one star. To do so:
+1. Call this endpoint:
+```
+curl -X "POST" "http://localhost:8000/block" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ",
+  "star": {
+    "dec": "-26° 29'\'' 24.9",
+    "ra": "16h 29m 1.0s",
+    "story": "Found star using https://www.google.com/sky/"
+  }
+}'
+```
+
+### Lookup service
+You can lookup stars with the following endpoints:
+1. Get a block indicating the block height in the blockchain:
+```
+curl "http://localhost:8000/block/1"
+```
+2. Get a block by its hash:
+```
+curl "http://localhost:8000/stars/hash:a59e9e399bc17c2db32a7a87379a8012f2c8e08dd661d7c0a6a4845d4f3ffb9f"
+```
+3. Get all the blocks registered by a given address:
+```
+curl "http://localhost:8000/stars/address:142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ"
+```
+4. Get all the blocks in the chain:
+```
+curl "http://localhost:8000/blocks"
+```
