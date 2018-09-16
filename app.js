@@ -130,6 +130,8 @@ server.route({
             if(!starRegistrationRequest.messageSignature) {
                 throw {message: 'Validate your identity'}
             }
+            // Delete request so that only 1 star can be registered per identity validation
+            requestsDB.deleteRequest(address);
             return blockchain.addBlock(new Block(body));
         }).then(() => {
             return blockchain.getBlockHeight();

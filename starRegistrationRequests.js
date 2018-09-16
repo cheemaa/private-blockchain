@@ -26,4 +26,8 @@ module.exports = class StarRegistrationRequests{
   saveRequest(newRequest) {
     return db.put(newRequest.address, JSON.stringify(newRequest));
   }
+
+  deleteRequest(address) {
+    return db.del(address);
+  }
 }
