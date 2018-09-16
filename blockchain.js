@@ -73,6 +73,24 @@ module.exports = class Blockchain{
         return db.get(blockHeight);
     }
 
+    // get block by hash
+    getBlockByHash(hash){
+        return new Promise(function(resolve, reject) {
+            db.createValueStream().on('data', function (block) {
+                var block = JSON.parse(block);
+                if(block.hash == hash) {
+                    resolve(block);
+                }
+            }).on('error', function(err) {
+                console.log('Unable to read data stream!', err);
+                reject(err);
+            }).on('close', function() {
+                console.log('Block hash [' + hash + '] not found');
+                reject({message: 'Block hash [' + hash + '] not found'});
+            })
+        });
+    }
+
     // get all blocks in the chain
     getAllBlocks(){
         return new Promise(function(resolve, reject) {

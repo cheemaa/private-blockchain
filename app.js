@@ -81,6 +81,27 @@ server.route({
     }
 });
 
+// Endpoint to retrieve a star by its block hash
+server.route({
+    method:'GET',
+    path:'/stars/hash:{hash}',
+    handler:function(request,h) {
+        let hash = encodeURIComponent(request.params.hash);
+        if(hash == undefined || hash == '') {
+            let error = { error: "You must provide a hash"};
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        }
+        return blockchain.getBlockByHash(hash).then((block) => {
+            if(block.body && block.body.star && block.body.star.story) {
+                block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
+            }
+            return block;
+        }).catch((error) => {
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        });
+    }
+});
+
 // Endpoint to register a new star
 server.route({
     method:'POST',
