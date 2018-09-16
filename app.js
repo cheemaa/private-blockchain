@@ -195,16 +195,16 @@ server.route({
     method:'POST',
     path:'/signMessage',
     handler:function(request,h) {
-        let privateKey = request.payload.privateKey;
+        let wif = request.payload.wif;
         let message = request.payload.message;
 
-        if(privateKey == undefined || privateKey == '' || message == undefined || message == '') {
+        if(wif == undefined || wif == '' || message == undefined || message == '') {
             let error = { error: "You must provide your private key and a the message to sign"};
             return h.response(error).header('Content-Type', 'application/json').code(400);
         }
 
-        var keyPair = bitcoin.ECPair.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss');
-        privateKey = keyPair.privateKey;
+        var keyPair = bitcoin.ECPair.fromWIF(wif);
+        let privateKey = keyPair.privateKey;
 
         var signature = bitcoinMessage.sign(message, privateKey, keyPair.compressed);
         return {signature: signature.toString('base64')};
