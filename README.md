@@ -1,4 +1,4 @@
-# Blockchain Data
+# Blockchain Notary Service
 
 Notary service to register stars implemented using blockchain.
 
