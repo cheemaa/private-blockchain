@@ -5,6 +5,7 @@ const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
 const Blockchain = require('./blockchain');
 const Block = require('./block');
+const Star = require('./star');
 const blockchain = new Blockchain();
 const StarRegistrationRequest = require('./starRegistrationRequest');
 const StarRegistrationRequests = require('./starRegistrationRequests');
@@ -37,10 +38,7 @@ server.route({
             return blockchain.getBlock(encodeURIComponent(request.params.height));
         } ).then((block) => {
             block = JSON.parse(block);
-            if(block.body && block.body.star && block.body.star.story) {
-                block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
-            }
-            return h.response(block).header('Content-Type', 'application/json').code(200);
+            return h.response(Star.parsedStar(block)).header('Content-Type', 'application/json').code(200);
         }).catch( (error) => {
             console.log(error);
             return h.response(error).header('Content-Type', 'application/json').code(404);
@@ -92,10 +90,7 @@ server.route({
             return h.response(error).header('Content-Type', 'application/json').code(400);
         }
         return blockchain.getBlockByHash(hash).then((block) => {
-            if(block.body && block.body.star && block.body.star.story) {
-                block.body.star.storyDecoded = new Buffer(block.body.star.story, 'hex').toString();
-            }
-            return block;
+            return Star.parsedStar(block);
         }).catch((error) => {
             return h.response(error).header('Content-Type', 'application/json').code(400);
         });
@@ -108,37 +103,31 @@ server.route({
     path:'/block',
     handler:function(request,h) {
         let address = request.payload.address;
-        let star = request.payload.star;
-        if(address == undefined || address == '' || star == undefined || star == '') {
+        let rawStarData = request.payload.star;
+        if(address == undefined || address == '' || rawStarData == undefined || rawStarData == '') {
             let error = { error: "You must provide your address and a star object"};
             return h.response(error).header('Content-Type', 'application/json').code(400);
         }
-
-        if(star.ra == undefined || star.ra == '' || star.dec == undefined || star.dec == '' || star.story == undefined || star.story == '') {
-            let error = { error: "A star must contain the following field: ra, de and story"};
-            return h.response(error).header('Content-Type', 'application/json').code(400);
-        }
-
         
-        star.story = new Buffer(star.story).toString('hex');
-
-        var body = {
-            address: address,
-            star: star
-        }
         return requestsDB.getRequest(address).then((starRegistrationRequest) => {
             if(!starRegistrationRequest.messageSignature) {
                 throw {message: 'Validate your identity'}
             }
-            // Delete request so that only 1 star can be registered per identity validation
-            requestsDB.deleteRequest(address);
+            let star = new Star(rawStarData);
+
+            var body = {
+                address: address,
+                star: star
+            }
             return blockchain.addBlock(new Block(body));
         }).then(() => {
+            // Delete request so that only 1 star can be registered per identity validation
+            requestsDB.deleteRequest(address);
             return blockchain.getBlockHeight();
         }).then((height) => {
             return blockchain.getBlock(height);
         }).then((block) => {
-            return h.response(block).header('Content-Type', 'application/json').code(200);
+            return h.response(Star.parsedStar(block)).header('Content-Type', 'application/json').code(200);
         }).catch((error) => {
             console.log(error);
             return h.response({error: error.message}).header('Content-Type', 'application/json').code(400);

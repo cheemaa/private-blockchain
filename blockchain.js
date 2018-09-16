@@ -6,6 +6,7 @@ const SHA256 = require('crypto-js/sha256');
 const level = require('level');
 const chainDB = './chaindata';
 const Block = require('./block');
+const Star = require('./star');
 const db = level(chainDB);
 
 /* ===== Blockchain Class ==========================
@@ -96,7 +97,7 @@ module.exports = class Blockchain{
         return new Promise(function(resolve, reject) {
             let blocks = [];
             db.createValueStream().on('data', function (block) {
-                blocks.push(JSON.parse(block));
+                blocks.push(Star.parsedStar(JSON.parse(block)));
             }).on('error', function(err) {
                 console.log('Unable to read data stream!', err);
                 reject(err);
@@ -113,7 +114,7 @@ module.exports = class Blockchain{
             db.createValueStream().on('data', function (block) {
                 var block = JSON.parse(block);
                 if(block.body && block.body.address && block.body.address == address) {
-                    blocks.push(block);
+                    blocks.push(Star.parsedStar(block));
                 }
             }).on('error', function(err) {
                 console.log('Unable to read data stream!', err);
