@@ -73,6 +73,39 @@ module.exports = class Blockchain{
         return db.get(blockHeight);
     }
 
+    // get all blocks in the chain
+    getAllBlocks(){
+        return new Promise(function(resolve, reject) {
+            let blocks = [];
+            db.createValueStream().on('data', function (block) {
+                blocks.push(JSON.parse(block));
+            }).on('error', function(err) {
+                console.log('Unable to read data stream!', err);
+                reject(err);
+            }).on('close', function() {
+                resolve(blocks);
+            })
+        });
+    }
+
+    // get blocks registered by a given address
+    getBlocks(address){
+        return new Promise(function(resolve, reject) {
+            let blocks = [];
+            db.createValueStream().on('data', function (block) {
+                var block = JSON.parse(block);
+                if(block.body && block.body.address && block.body.address == address) {
+                    blocks.push(block);
+                }
+            }).on('error', function(err) {
+                console.log('Unable to read data stream!', err);
+                reject(err);
+            }).on('close', function() {
+                resolve(blocks);
+            })
+        });
+    }
+
     // validate block
     validateBlock(blockHeight){
         return new Promise(function(resolve, reject) {

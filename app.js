@@ -16,7 +16,7 @@ const server=Hapi.server({
     port:8000
 });
 
-// Add the route
+// Endpoint to retrieve a specific blok
 server.route({
     method:'GET',
     path:'/block/{height}',
@@ -48,6 +48,40 @@ server.route({
     }
 });
 
+// Endpoint to get all blocks in the blockchain
+server.route({
+    method:'GET',
+    path:'/blocks',
+    handler:function(request,h) {
+        return blockchain.getAllBlocks().then((blocks) => {
+            return blocks;
+        }).catch((error) => {
+            console.log('Error retrieving all blocks. ' + error);
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        });
+    }
+});
+
+// Endpoint to retrieve stars registered by a given address
+server.route({
+    method:'GET',
+    path:'/stars/address:{address}',
+    handler:function(request,h) {
+        let address = encodeURIComponent(request.params.address);
+        if(address == undefined || address == '') {
+            let error = { error: "You must provide an address"};
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        }
+        return blockchain.getBlocks(address).then((blocks) => {
+            return blocks;
+        }).catch((error) => {
+            console.log('Error retrieving blocks for a given address. ' + error);
+            return h.response(error).header('Content-Type', 'application/json').code(400);
+        });
+    }
+});
+
+// Endpoint to register a new star
 server.route({
     method:'POST',
     path:'/block',
@@ -101,6 +135,7 @@ server.route({
     }
 });
 
+// Endpoint to get a message to be signed, in order to verify identity
 server.route({
     method:'POST',
     path:'/requestValidation',
@@ -143,6 +178,7 @@ server.route({
     }
 });
 
+// Endpoint to sign a message
 server.route({
     method:'POST',
     path:'/signMessage',
@@ -163,6 +199,7 @@ server.route({
     }
 });
 
+// Endpoint to validate the signature of a messages, in order to be confirm identity and get permission to register a star
 server.route({
     method:'POST',
     path:'/message-signature/validate',
